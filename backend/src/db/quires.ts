@@ -49,7 +49,7 @@ export const createProduct = async (data: NewProduct) => {
 };
 
 export const getAllProducts = async () => {
-  const [products] = await db.query.products.findMany({
+  return await db.query.products.findMany({
     with: { user: true },
     orderBy: (products, { desc }) => [desc(products.createdAt)],
   });
@@ -69,8 +69,8 @@ export const getProductById = async (id: string) => {
 };
 
 export const getProductByUserId = async (id: string) => {
-  return await db.query.products.findFirst({
-    where: eq(users.id, id),
+  return await db.query.products.findMany({
+    where: eq(products.userId, id),
     with: {
       user: true,
     },
@@ -104,7 +104,7 @@ export const createComment = async (data: NewComment) => {
 };
 
 export const getAllCommentsByProductId = async (id: string) => {
-  const [comments] = await db.query.comments.findMany({
+  return await db.query.comments.findMany({
     where: (comments, { eq }) => eq(comments.productId, id),
     with: { user: true },
     orderBy: (comments, { desc }) => [desc(comments.createdAt)],
