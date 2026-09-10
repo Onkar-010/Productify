@@ -21,7 +21,7 @@ export async function syncData(req: Request, res: Response) {
     }
 
     //Setting user into db and cleark
-    const user = queries.upsertUser({
+    const user = await queries.upsertUser({
       id: userId,
       email,
       name,

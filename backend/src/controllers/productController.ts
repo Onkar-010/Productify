@@ -78,6 +78,7 @@ export const createProduct = async (req: Request, res: Response) => {
 };
 
 // Update product (protected - owner only)
+
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { userId } = getAuth(req);
@@ -86,29 +87,45 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { title, description, imageUrl } = req.body;
 
+    // 1. Guard against empty updates
+    if (
+      title === undefined &&
+      description === undefined &&
+      imageUrl === undefined
+    ) {
+      return res.status(400).json({
+        error: "Bad Request",
+        message:
+          "At least one field (title, description, or imageUrl) must be provided to update.",
+      });
+    }
+
     // Check if product exists and belongs to user
     const productId = Array.isArray(id) ? id[0] : id;
     const existingProduct = await queries.getProductById(productId);
     if (!existingProduct) {
-      res.status(404).json({ error: "Product not found" });
-      return;
+      return res.status(404).json({ error: "Product not found" });
     }
 
     if (existingProduct.userId !== userId) {
-      res.status(403).json({ error: "You can only update your own products" });
-      return;
+      return res
+        .status(403)
+        .json({ error: "You can only update your own products" });
     }
 
-    const product = await queries.updateProduct(productId, {
-      name: title,
-      description,
-      imageUrl,
-    });
+    // 2. Safely build the update payload for Drizzle
+    const updateData = {
+      ...(title !== undefined && { name: title }),
+      ...(description !== undefined && { description }),
+      ...(imageUrl !== undefined && { imageUrl }),
+    };
 
-    res.status(200).json(product);
+    const product = await queries.updateProduct(productId, updateData);
+
+    return res.status(200).json(product);
   } catch (error) {
     console.error("Error updating product:", error);
-    res.status(500).json({ error: "Failed to update product" });
+    return res.status(500).json({ error: "Failed to update product" });
   }
 };
 
